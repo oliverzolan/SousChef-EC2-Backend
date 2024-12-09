@@ -1,3 +1,5 @@
+import os
+from dotenv import load_dotenv
 from flask import Flask
 from Controller.IngredientsController import ingredients_blueprint
 from Controller.PantryController import pantry_blueprint
@@ -15,7 +17,14 @@ app.register_blueprint(recipe_blueprint, url_prefix='/recipes')
 app.register_blueprint(user_blueprint, url_prefix='/users')
 app.register_blueprint(ingredients_blueprint, url_prefix='/ingredients')
 
-print(app.url_map)
+load_dotenv()
 
-if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5000)
+app.run(
+    host="0.0.0.0",
+    port=5000,
+    ssl_context=(
+        os.getenv("SSL_CERT_PATH"),
+        os.getenv("SSL_KEY_PATH")
+    )
+)
+
