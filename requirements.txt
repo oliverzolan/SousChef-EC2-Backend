@@ -1,0 +1,19 @@
+# Core Dependencies
+boto3
+pymysql
+firebase-admin
+flask
+flask-cors
+python-dotenv
+
+# Caching
+redis
+
+# Testing
+pytest
+pytest-mock
+coverage
+
+# Optional Utilities
+requests
+gunicorn
