@@ -37,3 +37,29 @@ class UserModel:
             logging.error(f"Error creating user with Firebase UID {firebase_uid} and email {email}: {str(e)}", exc_info=True)
             # Return an error message
             return {"error": "An error occurred while creating the user", "details": str(e)}
+
+    def delete_user(self, firebase_uid):
+        """
+        Delete a user with the given Firebase UID.
+        """
+        try:
+            with self.db.cursor() as cursor:
+                # Check if the user exists
+                cursor.execute("SELECT id FROM Users WHERE firebase_uid = %s", (firebase_uid,))
+                user = cursor.fetchone()
+                if not user:
+                    return {"error": "User not found"}
+
+                # Delete the user
+                cursor.execute("DELETE FROM Users WHERE firebase_uid = %s", (firebase_uid,))
+                self.db.commit()
+                return {"message": f"User with Firebase UID {firebase_uid} has been deleted successfully"}
+
+        except Exception as e:
+            # Rollback the transaction if something goes wrong
+            self.db.rollback()
+            # Log the error
+            logging.error(f"Error deleting user with Firebase UID {firebase_uid}: {str(e)}", exc_info=True)
+            # Return an error message
+            return {"error": "An error occurred while deleting the user", "details": str(e)}
+
