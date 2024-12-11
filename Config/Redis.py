@@ -7,8 +7,8 @@ load_dotenv()
 class RedisClient:
     def __init__(self):
         self.host = os.getenv("REDIS_HOST") 
-        self.port = int(os.getenv("REDIS_PORT")   
-        self.db = int(os.getenv("REDIS_DB")          
+        self.port = int(os.getenv("REDIS_PORT")) 
+        self.db = os.getenv("REDIS_DB")     
         self.redis_client = None
 
     def connect(self):
