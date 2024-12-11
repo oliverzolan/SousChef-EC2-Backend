@@ -3,12 +3,11 @@ import logging
 from Config.Fb import verify_firebase_token
 from Config.Redis import RedisClient  
 
-# Initialize Redis client
 redis_client = RedisClient().connect()
 
 # Set up logging
 logging.basicConfig(
-    filename='/var/log/flask_app.log',  # Adjust the path if needed
+    filename='/var/log/flask_app.log',
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
@@ -17,9 +16,13 @@ def get_cached_uid_redis(id_token):
     """
     Cache the Firebase UID verification using Redis.
     """
+    redis_connection = None
     try:
+        # Establish a Redis connection
+        redis_connection = RedisClient().connect()
+        
         # Check the cache for the UID
-        cached_uid = redis_client.get(id_token)
+        cached_uid = redis_connection.get(id_token)
         if cached_uid:
             logging.info("[get_cached_uid_redis] Cache hit for ID token.")
             return cached_uid
@@ -43,10 +46,15 @@ def get_cached_uid_redis(id_token):
             logging.error("[get_cached_uid_redis] Expiration time is invalid or in the past.")
             return None
 
-        redis_client.setex(id_token, int(expires_in), firebase_uid)
+        redis_connection.setex(id_token, int(expires_in), firebase_uid)
         logging.info(f"[get_cached_uid_redis] Cached UID for {int(expires_in)} seconds.")
         return firebase_uid
 
     except Exception as e:
         logging.error(f"[get_cached_uid_redis] Error: {str(e)}", exc_info=True)
         return None
+
+    finally:
+        if redis_connection:
+            redis_connection.close()
+            logging.info("[get_cached_uid_redis] Redis connection closed.")

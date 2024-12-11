@@ -3,24 +3,17 @@ from Config.SecretManager import get_secret
 import os
 from dotenv import load_dotenv
 
-# Load environment variables from .env
-load_dotenv()
-
-# Access environment variables
-AWS_REGION = os.getenv("AWS_REGION")
-SECRET_WRITE = os.getenv("SECRET_WRITE")
-SECRET_READ = os.getenv("SECRET_READ")
-
+load_dotenv()  
 
 class Database:
     """
     Database configuration and connection management for read and write operations.
     """
 
-    def __init__(self, write_secret=SECRET_WRITE, read_secret=SECRET_READ, region_name=AWS_REGION):
-        self.write_secret_name = write_secret
-        self.read_secret_name = read_secret
-        self.region_name = region_name
+    def __init__(self):
+        self.region_name = os.getenv("AWS_REGION") 
+        self.write_secret_name = os.getenv("SECRET_WRITE")
+        self.read_secret_name = os.getenv("SECRET_READ")
         self.write_connection = None
         self.read_connection = None
 

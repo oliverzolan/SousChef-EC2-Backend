@@ -43,7 +43,7 @@ def verify_firebase_token(id_token):
     """
     try:
         decoded_token = auth.verify_id_token(id_token)
-        return decoded_token  # Return the entire decoded token
+        return decoded_token
     except Exception as e:
         print(f"Error verifying Firebase token: {e}")
         return None

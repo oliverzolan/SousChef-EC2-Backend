@@ -2,18 +2,13 @@ import os
 import redis
 from dotenv import load_dotenv
 
-# Load environment variables from the .env file
-load_dotenv()
-
-REDIS_HOST = os.getenv("REDIS_HOST")
-REDIS_PORT = os.getenv("REDIS_PORT")
-REDIS_DB = os.getenv("REDIS_DB")
+load_dotenv()  
 
 class RedisClient:
     def __init__(self):
-        self.host = REDIS_HOST
-        self.port = REDIS_PORT
-        self.db = REDIS_DB
+        self.host = os.getenv("REDIS_HOST") 
+        self.port = int(os.getenv("REDIS_PORT")   
+        self.db = int(os.getenv("REDIS_DB")          
         self.redis_client = None
 
     def connect(self):
@@ -27,4 +22,14 @@ class RedisClient:
                 db=self.db,
                 decode_responses=True
             )
+            print(f"Connected to Redis at {self.host}:{self.port} (DB: {self.db})")
         return self.redis_client
+
+    def close(self):
+        """
+        Close the Redis connection if it exists.
+        """
+        if self.redis_client:
+            self.redis_client.close()
+            print("Redis connection closed.")
+            self.redis_client = None

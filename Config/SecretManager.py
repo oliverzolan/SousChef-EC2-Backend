@@ -1,7 +1,5 @@
 import boto3
 import json
-import os
-from dotenv import load_dotenv
 
 def get_secret(secret_name, region_name):
     """
