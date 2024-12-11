@@ -1,26 +1,36 @@
 from flask import Blueprint, jsonify
 import logging
 
-# Define the blueprint
-recipe_blueprint = Blueprint('recipe', __name__)
+class RecipeController:
+    def __init__(self):
+        self.blueprint = Blueprint('recipe', __name__)
 
-# Initialize the logger
-logging.basicConfig(
-    filename='/var/log/flask_app.log',  # Log file path
-    level=logging.INFO,                # Logging level
-    format='%(asctime)s - %(levelname)s - %(message)s'  # Log format
-)
-logger = logging.getLogger(__name__)  # Logger instance for the blueprint
+        # Initialize the logger
+        logging.basicConfig(
+            filename='/var/log/flask_app.log', 
+            level=logging.INFO,               
+            format='%(asctime)s - %(levelname)s - %(message)s' 
+        )
+        self.logger = logging.getLogger(__name__)  
 
-# Create a dummy route
-@recipe_blueprint.route('/dummy', methods=['GET'])
-def dummy_route():
-    try:
-        logger.info("Accessed dummy route successfully.")  # Log the success
-        response = {"message": "This is a dummy route"}
-        logger.info(f"Response: {response}")  # Log the response
-        return jsonify(response), 200
-    except Exception as e:
-        error_response = {"error": "An error occurred", "details": str(e)}
-        logger.error(f"Error in dummy route: {error_response}")  # Log any errors
-        return jsonify(error_response), 500
+        # Register routes
+        self.blueprint.add_url_rule('/dummy', view_func=self.dummy_route, methods=['GET'])
+
+    def dummy_route(self):
+        """
+        A dummy route to test the recipe blueprint.
+        """
+        try:
+            self.logger.info("Accessed dummy route successfully.") 
+            response = {"message": "This is a dummy route"}
+            self.logger.info(f"Response: {response}")  
+            return jsonify(response), 200
+        except Exception as e:
+            error_response = {"error": "An error occurred", "details": str(e)}
+            self.logger.error(f"Error in dummy route: {error_response}")  
+            return jsonify(error_response), 500
+
+
+# Create an instance for controller and blueprint
+recipe_controller = RecipeController()
+recipe_blueprint = recipe_controller.blueprint

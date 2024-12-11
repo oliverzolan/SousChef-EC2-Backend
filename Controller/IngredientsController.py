@@ -1,57 +1,85 @@
+import logging
 from flask import Blueprint, jsonify, request
 from Config.Db import Database
 from Model.IngredientsModel import IngredientsModel
 
-ingredients_blueprint = Blueprint('ingredients_blueprint', __name__)
-db = Database()
+class IngredientsController:
+    def __init__(self):
+        self.blueprint = Blueprint('ingredients_blueprint', __name__)
+        self.db = Database()
 
-@ingredients_blueprint.route('/all', methods=['GET'])
-def get_all_ingredients():
-    """
-    Fetch all ingredients from the database.
-    """
-    try:
-        # Establish a database connection
-        connection = db.connect_read()
-        ingredients_model = IngredientsModel(connection)
+        # Initialize the logger
+        logging.basicConfig(
+            filename='/var/log/flask_app.log', 
+            level=logging.INFO,                
+            format='%(asctime)s - %(levelname)s - %(message)s'  
+        )
+        self.logger = logging.getLogger(__name__)
 
-        # Fetch all ingredients
-        ingredients = ingredients_model.get_all_ingredients()
-        if not ingredients:
-            return jsonify({"message": "No ingredients found"}), 404
+        # Define routes
+        self.blueprint.add_url_rule('/all', view_func=self.get_all_ingredients, methods=['GET'])
+        self.blueprint.add_url_rule('/search', view_func=self.search_ingredients, methods=['GET'])
 
-        return jsonify(ingredients), 200
+    def get_all_ingredients(self):
+        """
+        Fetch all ingredients from the database.
+        """
+        self.logger.info("[/all] Fetching all ingredients")
+        try:
+            # Establish a database connection
+            connection = self.db.connect_read()
+            ingredients_model = IngredientsModel(connection)
 
-    except Exception as e:
-        return jsonify({"error": "An error occurred while fetching ingredients", "details": str(e)}), 500
+            # Fetch all ingredients
+            ingredients = ingredients_model.get_all_ingredients()
+            if not ingredients:
+                self.logger.info("[/all] No ingredients found")
+                return jsonify({"message": "No ingredients found"}), 404
 
-    finally:
-        db.close_connections()
+            self.logger.info(f"[/all] Retrieved {len(ingredients)} ingredients")
+            return jsonify(ingredients), 200
 
-@ingredients_blueprint.route('/search', methods=['GET'])
-def search_ingredients():
-    """
-    Search for ingredients by name.
-    """
-    try:
-        # Get the search string from the query parameters
-        search_string = request.args.get('query', '').strip()
-        if not search_string:
-            return jsonify({"error": "Query parameter 'query' is required"}), 400
+        except Exception as e:
+            self.logger.error(f"[/all] Error occurred: {str(e)}", exc_info=True)
+            return jsonify({"error": "An error occurred while fetching ingredients", "details": str(e)}), 500
 
-        # Establish a database connection
-        connection = db.connect_read()
-        ingredients_model = IngredientsModel(connection)
+        finally:
+            self.logger.info("[/all] Closing database connections")
+            self.db.close_connections()
 
-        # Search for ingredients by name
-        results = ingredients_model.find_ingredient_by_name(search_string)
-        if "message" in results:
-            return jsonify(results), 404
+    def search_ingredients(self):
+        """
+        Search for ingredients by name.
+        """
+        self.logger.info("[/search] Searching for ingredients")
+        try:
+            search_string = request.args.get('query', '').strip()
+            if not search_string:
+                self.logger.warning("[/search] Query parameter 'query' is missing")
+                return jsonify({"error": "Query parameter 'query' is required"}), 400
 
-        return jsonify(results), 200
+            # Establish a database connection
+            connection = self.db.connect_read()
+            ingredients_model = IngredientsModel(connection)
 
-    except Exception as e:
-        return jsonify({"error": "An error occurred while searching for ingredients", "details": str(e)}), 500
+            # Search for ingredients by name
+            results = ingredients_model.find_ingredient_by_name(search_string)
+            if "message" in results:
+                self.logger.info(f"[/search] No ingredients found for query: {search_string}")
+                return jsonify(results), 404
 
-    finally:
-        db.close_connections()
+            self.logger.info(f"[/search] Found {len(results)} ingredients for query: {search_string}")
+            return jsonify(results), 200
+
+        except Exception as e:
+            self.logger.error(f"[/search] Error occurred: {str(e)}", exc_info=True)
+            return jsonify({"error": "An error occurred while searching for ingredients", "details": str(e)}), 500
+
+        finally:
+            self.logger.info("[/search] Closing database connections")
+            self.db.close_connections()
+
+
+# Create an instance for controller and blueprint
+ingredients_controller = IngredientsController()
+ingredients_blueprint = ingredients_controller.blueprint

@@ -13,113 +13,120 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s'  
 )
 
-pantry_blueprint = Blueprint('pantry_blueprint', __name__)
-db = Database()
+class PantryController:
+    def __init__(self):
+        self.blueprint = Blueprint('pantry_blueprint', __name__)
+        self.db = Database()
 
-@pantry_blueprint.route('/user', methods=['GET'])
-def get_user_pantry():
-    """
-    Fetch all pantry items for the authenticated user based on Firebase token.
-    """
-    try:
-        logging.info("Processing /user pantry request")
+        # Register routes
+        self.blueprint.add_url_rule('/user', view_func=self.get_user_pantry, methods=['GET'])
+        self.blueprint.add_url_rule('/user/add-ingredients', view_func=self.add_ingredients_to_pantry, methods=['POST'])
 
-        # Get the Authorization token from the request headers
-        id_token = request.headers.get('Authorization')
-        if not id_token:
-            logging.warning("Authorization token is missing in the request")
-            return jsonify({"error": "Authorization token is missing"}), 401
+    def get_user_pantry(self):
+        """
+        Fetch all pantry items for the authenticated user based on Firebase token.
+        """
+        try:
+            logging.info("Processing /user pantry request")
 
-        # Verify and cache the Firebase UID
-        firebase_uid = get_cached_uid_redis(id_token)
-        if not firebase_uid:
-            logging.warning("Invalid or expired Firebase token")
-            return jsonify({"error": "Invalid or expired Firebase token"}), 401
+            # Get the Authorization token from the request headers
+            id_token = request.headers.get('Authorization')
+            if not id_token:
+                logging.warning("Authorization token is missing in the request")
+                return jsonify({"error": "Authorization token is missing"}), 401
 
-        # Initialize database connections and models
-        connection = db.connect_read()
-        user_model = UserModel(connection)
-        pantry_model = PantryModel(connection)
+            # Verify and cache the Firebase UID
+            firebase_uid = get_cached_uid_redis(id_token)
+            if not firebase_uid:
+                logging.warning("Invalid or expired Firebase token")
+                return jsonify({"error": "Invalid or expired Firebase token"}), 401
 
-        # Get the user ID based on Firebase UID
-        user = user_model.get_user_by_firebase_uid(firebase_uid)
-        if not user:
-            logging.warning(f"User not found for Firebase UID: {firebase_uid}")
-            return jsonify({"error": "User not found"}), 404
+            # Initialize database connections and models
+            connection = self.db.connect_read()
+            user_model = UserModel(connection)
+            pantry_model = PantryModel(connection)
 
-        user_id = user['id']
-        logging.info(f"Fetched user ID: {user_id} for a verified Firebase UID")
+            # Get the user ID based on Firebase UID
+            user = user_model.get_user_by_firebase_uid(firebase_uid)
+            if not user:
+                logging.warning(f"User not found for Firebase UID: {firebase_uid}")
+                return jsonify({"error": "User not found"}), 404
 
-        # Get pantry items for the user
-        pantry_items = pantry_model.get_pantry_items_by_user_id(user_id)
-        if not pantry_items:
-            logging.info(f"No pantry items found for user ID: {user_id}")
-            return jsonify({"message": "No pantry items found for this user"}), 404
+            user_id = user['id']
+            logging.info(f"Fetched user ID: {user_id} for a verified Firebase UID")
 
-        logging.info(f"Pantry items fetched for user ID: {user_id}")
-        return jsonify(pantry_items), 200
+            # Get pantry items for the user
+            pantry_items = pantry_model.get_pantry_items_by_user_id(user_id)
+            if not pantry_items:
+                logging.info(f"No pantry items found for user ID: {user_id}")
+                return jsonify({"message": "No pantry items found for this user"}), 404
 
-    except Exception as e:
-        logging.error(f"Error occurred while fetching pantry items: {str(e)}", exc_info=True)
-        return jsonify({"error": "An error occurred while fetching pantry items", "details": str(e)}), 500
+            logging.info(f"Pantry items fetched for user ID: {user_id}")
+            return jsonify(pantry_items), 200
 
-    finally:
-        logging.info("Closing database connections for /user pantry request")
-        db.close_connections()
+        except Exception as e:
+            logging.error(f"Error occurred while fetching pantry items: {str(e)}", exc_info=True)
+            return jsonify({"error": "An error occurred while fetching pantry items", "details": str(e)}), 500
 
-@pantry_blueprint.route('/user/add-ingredients', methods=['POST'])
-def add_ingredients_to_pantry():
-    """
-    Batch add ingredients to the pantry for the authenticated user based on Firebase token.
-    """
-    try:
-        logging.info("Processing /user/add-ingredients request")
+        finally:
+            logging.info("Closing database connections for /user pantry request")
+            self.db.close_connections()
 
-        # Get the Authorization token from the request headers
-        id_token = request.headers.get('Authorization')
-        if not id_token:
-            logging.warning("Authorization token is missing in the request")
-            return jsonify({"error": "Authorization token is missing"}), 401
+    def add_ingredients_to_pantry(self):
+        """
+        Batch add ingredients to the pantry for the authenticated user based on Firebase token.
+        """
+        try:
+            logging.info("Processing /user/add-ingredients request")
 
-        # Verify and cache the Firebase UID
-        firebase_uid = get_cached_uid_redis(id_token)
-        if not firebase_uid:
-            logging.warning("Invalid or expired Firebase token")
-            return jsonify({"error": "Invalid or expired Firebase token"}), 401
+            # Get the Authorization token from the request headers
+            id_token = request.headers.get('Authorization')
+            if not id_token:
+                logging.warning("Authorization token is missing in the request")
+                return jsonify({"error": "Authorization token is missing"}), 401
 
-        # Initialize database connections and models
-        connection = db.connect_write()
-        user_model = UserModel(connection)
-        pantry_model = PantryModel(connection)
+            # Verify and cache the Firebase UID
+            firebase_uid = get_cached_uid_redis(id_token)
+            if not firebase_uid:
+                logging.warning("Invalid or expired Firebase token")
+                return jsonify({"error": "Invalid or expired Firebase token"}), 401
 
-        # Get the user ID based on Firebase UID
-        user = user_model.get_user_by_firebase_uid(firebase_uid)
-        if not user:
-            logging.warning(f"User not found for Firebase UID: {firebase_uid}")
-            return jsonify({"error": "User not found"}), 404
+            # Initialize database connections and models
+            connection = self.db.connect_write()
+            user_model = UserModel(connection)
+            pantry_model = PantryModel(connection)
 
-        user_id = user['id']
-        logging.info(f"Fetched user ID: {user_id} for a verified Firebase UID")
+            # Get the user ID based on Firebase UID
+            user = user_model.get_user_by_firebase_uid(firebase_uid)
+            if not user:
+                logging.warning(f"User not found for Firebase UID: {firebase_uid}")
+                return jsonify({"error": "User not found"}), 404
 
-        # Get the batch of ingredients from the request body
-        ingredients = request.json.get('ingredients', [])
-        if not ingredients:
-            logging.warning("No ingredients provided in the request body")
-            return jsonify({"error": "No ingredients provided"}), 400
+            user_id = user['id']
+            logging.info(f"Fetched user ID: {user_id} for a verified Firebase UID")
 
-        # Add ingredients to the pantry
-        result = pantry_model.add_ingredients_batch(user_id, ingredients)
-        if "error" in result:
-            return jsonify(result), 500
+            # Get the batch of ingredients from the request body
+            ingredients = request.json.get('ingredients', [])
+            if not ingredients:
+                logging.warning("No ingredients provided in the request body")
+                return jsonify({"error": "No ingredients provided"}), 400
 
-        logging.info(f"Successfully added ingredients to the pantry for user ID: {user_id}")
-        return jsonify({"message": "Ingredients added successfully", "details": result}), 201
+            # Add ingredients to the pantry
+            result = pantry_model.add_ingredients_batch(user_id, ingredients)
+            if "error" in result:
+                return jsonify(result), 500
 
-    except Exception as e:
-        logging.error(f"Error occurred while adding ingredients: {str(e)}", exc_info=True)
-        return jsonify({"error": "An error occurred while adding ingredients", "details": str(e)}), 500
+            logging.info(f"Successfully added ingredients to the pantry for user ID: {user_id}")
+            return jsonify({"message": "Ingredients added successfully", "details": result}), 201
 
-    finally:
-        logging.info("Closing database connections for /user/add-ingredients request")
-        db.close_connections()
+        except Exception as e:
+            logging.error(f"Error occurred while adding ingredients: {str(e)}", exc_info=True)
+            return jsonify({"error": "An error occurred while adding ingredients", "details": str(e)}), 500
 
+        finally:
+            logging.info("Closing database connections for /user/add-ingredients request")
+            self.db.close_connections()
+
+# Create an instance of the PantryController and expose its blueprint
+pantry_controller = PantryController()
+pantry_blueprint = pantry_controller.blueprint
