@@ -22,7 +22,6 @@ class RedisClient:
                 db=self.db,
                 decode_responses=True
             )
-            print(f"Connected to Redis at {self.host}:{self.port} (DB: {self.db})")
         return self.redis_client
 
     def close(self):
