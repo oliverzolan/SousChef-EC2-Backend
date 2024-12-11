@@ -95,7 +95,6 @@ class PantryModel:
                     """
                     cursor.execute(sql_decrement, (ing['quantity'], user_id, ing['ingredient_id']))
                     
-                    # Optionally delete rows where the quantity becomes zero or less
                     sql_delete = """
                     DELETE FROM Pantry
                     WHERE user_id = %s AND ingredient_id = %s AND quantity <= 0

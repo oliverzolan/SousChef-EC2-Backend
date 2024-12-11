@@ -1,3 +1,5 @@
+import logging
+
 class IngredientsModel:
     def __init__(self, db_connection):
         self.db = db_connection
@@ -17,21 +19,22 @@ class IngredientsModel:
                 ingredients = cursor.fetchall()
 
             if not ingredients:
+                logging.info("No ingredients found in the database")
                 return {"message": "No ingredients found in the database"}
 
+            logging.info(f"Fetched {len(ingredients)} ingredients from the database")
             return ingredients
 
         except Exception as e:
-            # Return an error message to the caller
+            logging.error(f"Error fetching ingredients: {str(e)}", exc_info=True)
             return {"error": "An error occurred while fetching ingredients", "details": str(e)}
 
     def find_ingredient_by_name(self, search_string):
         """
-        Check if the input string matches any ingredient names in the database.
+        Search for ingredients by name in the Ingredients table.
         """
         try:
             with self.db.cursor() as cursor:
-                # Force case-insensitive matching using COLLATE
                 cursor.execute(
                     """
                     SELECT ingredient_id, name, description, category
@@ -43,10 +46,12 @@ class IngredientsModel:
                 results = cursor.fetchall()
 
             if not results:
+                logging.info(f"No ingredients found matching '{search_string}'")
                 return {"message": f"No ingredients found matching '{search_string}'"}
 
+            logging.info(f"Found {len(results)} ingredients matching '{search_string}'")
             return results
 
         except Exception as e:
-            # Return an error message to the caller
+            logging.error(f"Error searching for ingredients with query '{search_string}': {str(e)}", exc_info=True)
             return {"error": "An error occurred while searching for ingredients", "details": str(e)}
