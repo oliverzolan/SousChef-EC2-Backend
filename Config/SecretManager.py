@@ -2,9 +2,7 @@ import boto3
 import json
 
 def get_secret(secret_name, region_name):
-    """
-    Retrieve a secret from AWS Secrets Manager.
-    """
+    # Get Secret from AWS Secret Manager
     client = boto3.client("secretsmanager", region_name=region_name)
     try:
         response = client.get_secret_value(SecretId=secret_name)

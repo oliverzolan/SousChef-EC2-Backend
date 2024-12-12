@@ -2,6 +2,9 @@ from flask import Blueprint, jsonify
 import logging
 
 class RecipeController:
+    """
+    Controller with routes, function calling, error handling, and logging.
+    """
     def __init__(self):
         self.blueprint = Blueprint('recipe', __name__)
 
@@ -13,12 +16,12 @@ class RecipeController:
         )
         self.logger = logging.getLogger(__name__)  
 
-        # Register routes
+        # Routes
         self.blueprint.add_url_rule('/dummy', view_func=self.dummy_route, methods=['GET'])
 
     def dummy_route(self):
         """
-        A dummy route to test the recipe blueprint.
+        Dummy route.
         """
         try:
             self.logger.info("Accessed dummy route successfully.") 
@@ -31,6 +34,6 @@ class RecipeController:
             return jsonify(error_response), 500
 
 
-# Create an instance for controller and blueprint
+# Create controller and blueprint
 recipe_controller = RecipeController()
 recipe_blueprint = recipe_controller.blueprint

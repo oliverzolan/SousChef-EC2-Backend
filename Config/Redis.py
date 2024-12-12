@@ -5,6 +5,9 @@ from dotenv import load_dotenv
 load_dotenv()  
 
 class RedisClient:
+    """
+    Redis configuration connection and close.
+    """
     def __init__(self):
         self.host = os.getenv("REDIS_HOST") 
         self.port = int(os.getenv("REDIS_PORT")) 
@@ -12,9 +15,7 @@ class RedisClient:
         self.redis_client = None
 
     def connect(self):
-        """
-        Establish and return a Redis connection.
-        """
+        # Establish connection
         if not self.redis_client:
             self.redis_client = redis.StrictRedis(
                 host=self.host,
@@ -25,9 +26,7 @@ class RedisClient:
         return self.redis_client
 
     def close(self):
-        """
-        Close the Redis connection if it exists.
-        """
+        # Close connection
         if self.redis_client:
             self.redis_client.close()
             print("Redis connection closed.")

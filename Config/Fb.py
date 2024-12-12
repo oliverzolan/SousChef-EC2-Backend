@@ -10,10 +10,8 @@ REGION_NAME = os.getenv("AWS_REGION")
 
 
 def initialize_firebase():
-    """
-    Initialize Firebase Admin SDK using credentials from Secrets Manager.
-    """
     try:
+        # Establish cred with AWS Secret Manager
         firebase_credentials = get_secret(FIREBASE_SECRET, REGION_NAME)
         private_key = firebase_credentials['Private-Key'].replace('\\n', '\n')
         cred = credentials.Certificate({
@@ -38,10 +36,8 @@ def initialize_firebase():
 
 
 def verify_firebase_token(id_token):
-    """
-    Verify the Firebase ID token and return the decoded token.
-    """
     try:
+        # Decode Token with SDK
         decoded_token = auth.verify_id_token(id_token)
         return decoded_token
     except Exception as e:

@@ -7,9 +7,8 @@ load_dotenv()
 
 class Database:
     """
-    Database configuration and connection management for read and write operations.
+    Database configuration connection for read, write and close.
     """
-
     def __init__(self):
         self.region_name = os.getenv("AWS_REGION") 
         self.write_secret_name = os.getenv("SECRET_WRITE")
@@ -18,13 +17,11 @@ class Database:
         self.read_connection = None
 
     def connect_write(self):
-        """
-        Establish a connection to the write database using credentials from Secrets Manager.
-        Retries 3 times in case of failure.
-        """
+        # Check current connection
         if self.write_connection and self.write_connection.open:
             return self.write_connection
 
+        # Establish connection with 3 tries
         write_credentials = get_secret(self.write_secret_name, self.region_name)
         retries = 3
         while retries > 0:
@@ -46,13 +43,11 @@ class Database:
                     raise e
 
     def connect_read(self):
-        """
-        Establish a connection to the read database using credentials from Secrets Manager.
-        Retries 3 times in case of failure.
-        """
+        # Check current connection
         if self.read_connection and self.read_connection.open:
             return self.read_connection
 
+        # Establish connection with 3 tries
         read_credentials = get_secret(self.read_secret_name, self.region_name)
         retries = 3
         while retries > 0:
@@ -74,9 +69,7 @@ class Database:
                     raise e
 
     def close_connections(self):
-        """
-        Close both the write and read database connections if they are open.
-        """
+        # C.s
         if self.write_connection and self.write_connection.open:
             self.write_connection.close()
             print("Write database connection closed.")

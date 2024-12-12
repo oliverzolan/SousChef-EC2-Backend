@@ -6,9 +6,10 @@ class PantryModel:
 
     def get_pantry_items_by_user_id(self, user_id):
         """
-        Fetch all pantry items for a given user ID.
+        Fetch all pantry items.
         """
         try:
+            # Set up query
             with self.db.cursor() as cursor:
                 logging.info(f"Fetching pantry items for user_id {user_id}")
                 cursor.execute(
@@ -22,6 +23,7 @@ class PantryModel:
                 )
                 pantry_items = cursor.fetchall()
 
+            # Check result
             if not pantry_items:
                 logging.info(f"No pantry items found for user_id {user_id}")
                 return {"message": "User has no items in their pantry"}
@@ -35,20 +37,15 @@ class PantryModel:
 
     def add_ingredients_batch(self, user_id, ingredients):
         """
-        Batch add ingredients to the pantry for a given user ID.
-
-        Args:
-            user_id (int): The ID of the user.
-            ingredients (list): List of dictionaries with 'ingredient_id' and 'quantity'.
-
-        Returns:
-            dict: Success or error message.
+        Batch add ingredients.
         """
         try:
+            # Check input
             if not ingredients or not all('ingredient_id' in ing and 'quantity' in ing for ing in ingredients):
                 logging.warning(f"Invalid input: {ingredients}")
                 return {"error": "Invalid ingredients data. Each ingredient must have 'ingredient_id' and 'quantity'."}
 
+            # Set up query
             with self.db.cursor() as cursor:
                 logging.info(f"Adding {len(ingredients)} ingredient(s) to the pantry for user_id {user_id}")
                 sql = """
@@ -60,6 +57,7 @@ class PantryModel:
                 cursor.executemany(sql, data)
                 self.db.commit()
 
+            # Check result
             logging.info(f"Successfully added {len(ingredients)} ingredient(s) to the pantry for user_id {user_id}")
             return {"message": f"Successfully added {len(ingredients)} ingredient(s) to the pantry"}
 
@@ -70,20 +68,15 @@ class PantryModel:
 
     def remove_ingredients_batch(self, user_id, ingredients):
         """
-        Batch remove ingredients from the pantry for a given user ID.
-
-        Args:
-            user_id (int): The ID of the user.
-            ingredients (list): List of dictionaries with 'ingredient_id' and 'quantity'.
-
-        Returns:
-            dict: Success or error message.
+        Batch remove ingredients.
         """
         try:
+            # Check input
             if not ingredients or not all('ingredient_id' in ing and 'quantity' in ing for ing in ingredients):
                 logging.warning(f"Invalid input: {ingredients}")
                 return {"error": "Invalid ingredients data. Each ingredient must have 'ingredient_id' and 'quantity'."}
 
+            # Set up query
             with self.db.cursor() as cursor:
                 logging.info(f"Removing {len(ingredients)} ingredient(s) from the pantry for user_id {user_id}")
                 
@@ -103,6 +96,7 @@ class PantryModel:
 
                 self.db.commit()
 
+            # Check result
             logging.info(f"Successfully removed {len(ingredients)} ingredient(s) from the pantry for user_id {user_id}")
             return {"message": f"Successfully removed {len(ingredients)} ingredient(s) from the pantry"}
 

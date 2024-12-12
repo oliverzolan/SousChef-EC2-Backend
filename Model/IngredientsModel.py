@@ -6,9 +6,10 @@ class IngredientsModel:
 
     def get_all_ingredients(self):
         """
-        Fetch all ingredients from the Ingredients table.
+        Fetch all ingredients.
         """
         try:
+            # Set up query
             with self.db.cursor() as cursor:
                 cursor.execute(
                     """
@@ -18,6 +19,7 @@ class IngredientsModel:
                 )
                 ingredients = cursor.fetchall()
 
+            # Check result
             if not ingredients:
                 logging.info("No ingredients found in the database")
                 return {"message": "No ingredients found in the database"}
@@ -31,9 +33,10 @@ class IngredientsModel:
 
     def find_ingredient_by_name(self, search_string):
         """
-        Search for ingredients by name in the Ingredients table.
+        Fetch ingredients by search.
         """
         try:
+            # Set up query
             with self.db.cursor() as cursor:
                 cursor.execute(
                     """
@@ -44,7 +47,8 @@ class IngredientsModel:
                     (f"%{search_string}%",)
                 )
                 results = cursor.fetchall()
-
+                
+            # Check result
             if not results:
                 logging.info(f"No ingredients found matching '{search_string}'")
                 return {"message": f"No ingredients found matching '{search_string}'"}

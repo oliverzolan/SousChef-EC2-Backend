@@ -6,21 +6,24 @@ class UserModel:
 
     def get_user_by_firebase_uid(self, firebase_uid):
         """
-        Check if a user with the given Firebase UID already exists.
+        Check if user.
         """
         try:
+            # Set up query
             with self.db.cursor() as cursor:
                 cursor.execute("SELECT id FROM Users WHERE firebase_uid = %s", (firebase_uid,))
                 return cursor.fetchone()
+
         except Exception as e:
             logging.error(f"Error fetching user by Firebase UID {firebase_uid}: {str(e)}", exc_info=True)
             return {"error": "An error occurred while fetching the user", "details": str(e)}
 
     def create_user(self, firebase_uid, email):
         """
-        Create a new user with the given Firebase UID and email.
+        Create user.
         """
         try:
+            # Set up query
             with self.db.cursor() as cursor:
                 cursor.execute(
                     "INSERT INTO Users (firebase_uid, email) VALUES (%s, %s)",
@@ -28,6 +31,7 @@ class UserModel:
                 )
                 self.db.commit()
                 return cursor.lastrowid
+
         except Exception as e:
             self.db.rollback()
             logging.error(f"Error creating user with Firebase UID {firebase_uid} and email {email}: {str(e)}", exc_info=True)
@@ -35,9 +39,10 @@ class UserModel:
 
     def delete_user(self, firebase_uid):
         """
-        Delete a user with the given Firebase UID.
+        Delete user.
         """
         try:
+            # Set up query
             with self.db.cursor() as cursor:
                 cursor.execute("SELECT id FROM Users WHERE firebase_uid = %s", (firebase_uid,))
                 user = cursor.fetchone()

@@ -6,12 +6,12 @@ from Cache.FbCache import get_cached_uid_redis
 from Model.UserModel import UserModel
 
 class UserController:
+    """
+    Controller with routes, function calling, error handling, and logging.
+    """
     def __init__(self):
         self.blueprint = Blueprint('user', __name__)
         self.db = Database()
-
-        # Register routes
-        self.blueprint.add_url_rule('/create', view_func=self.create_user, methods=['POST'])
 
         # Initialize the logger
         logging.basicConfig(
@@ -21,9 +21,12 @@ class UserController:
         )
         self.logger = logging.getLogger(__name__)
 
+        # Routes
+        self.blueprint.add_url_rule('/create', view_func=self.create_user, methods=['POST'])
+
     def create_user(self):
         """
-        Create a new user in the database when an account is created.
+        Create user in Database.
         """
         try:
             self.logger.info("[/create] Processing user creation request")
@@ -38,24 +41,24 @@ class UserController:
                     self.logger.warning("[/create] Email is missing in the request")
                 return jsonify({"error": "Authorization token or email is missing"}), 400
 
-            # Verify and cache the Firebase UID
+            # Get UID
             firebase_uid = get_cached_uid_redis(id_token)
             if not firebase_uid:
                 self.logger.warning("[/create] Invalid or expired Firebase token")
                 return jsonify({"error": "Invalid or expired Firebase token"}), 401
 
-            # Establish a database connection
+            # Establish database connection
             self.logger.info("[/create] Establishing write connection to the database")
             connection = self.db.connect_write()
             user_model = UserModel(connection)
 
-            # Check if the user already exists
+            # Check if user exist
             existing_user = user_model.get_user_by_firebase_uid(firebase_uid)
             if existing_user:
                 self.logger.info(f"[/create] User already exists: {existing_user['id']}")
                 return jsonify({"message": "User already exists", "user_id": existing_user['id']}), 200
 
-            # Insert the new user into the database
+            # Add user
             user_id = user_model.create_user(firebase_uid, email)
             self.logger.info(f"[/create] New user created with ID: {user_id}")
 
@@ -70,7 +73,7 @@ class UserController:
             self.db.close_connections()
 
 
-# Create an instance for controller and blueprint
+# Create controller and blueprint
 user_controller = UserController()
 user_blueprint = user_controller.blueprint
 
