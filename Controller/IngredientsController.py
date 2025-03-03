@@ -20,69 +20,117 @@ class IngredientsController:
         self.logger = logging.getLogger(__name__)
 
         # Routes
-        self.blueprint.add_url_rule('/all', view_func=self.get_all_ingredients, methods=['GET'])
-        self.blueprint.add_url_rule('/search', view_func=self.search_ingredients, methods=['GET'])
+        self.blueprint.add_url_rule('/all/<int:user_id>', view_func=self.get_all_ingredients, methods=['GET'])
+        self.blueprint.add_url_rule('/add', view_func=self.add_ingredients_batch, methods=['POST'])
+        self.blueprint.add_url_rule('/remove', view_func=self.remove_ingredients_batch, methods=['POST'])
+        self.blueprint.add_url_rule('/update', view_func=self.update_ingredient_quantity, methods=['POST'])
 
-    def get_all_ingredients(self):
+    def get_all_ingredients(self, user_id):
         """
-        Fetch all ingredients.
+        Fetch all ingredients for a specific user.
         """
-        self.logger.info("[/all] Fetching all ingredients")
+        self.logger.info(f"[/all/{user_id}] Fetching all ingredients")
         try:
-            # Establish database connection
             connection = self.db.connect_read()
             ingredients_model = IngredientsModel(connection)
 
-            # Get Ingredients
-            ingredients = ingredients_model.get_all_ingredients()
+            ingredients = ingredients_model.get_all_ingredients(user_id)
             if not ingredients:
-                self.logger.info("[/all] No ingredients found")
+                self.logger.info(f"[/all/{user_id}] No ingredients found")
                 return jsonify({"message": "No ingredients found"}), 404
 
-            self.logger.info(f"[/all] Retrieved {len(ingredients)} ingredients")
+            self.logger.info(f"[/all/{user_id}] Retrieved {len(ingredients)} ingredients")
             return jsonify(ingredients), 200
 
         except Exception as e:
-            self.logger.error(f"[/all] Error occurred: {str(e)}", exc_info=True)
+            self.logger.error(f"[/all/{user_id}] Error occurred: {str(e)}", exc_info=True)
             return jsonify({"error": "An error occurred while fetching ingredients", "details": str(e)}), 500
 
         finally:
-            self.logger.info("[/all] Closing database connections")
+            self.logger.info(f"[/all/{user_id}] Closing database connection")
             self.db.close_connections()
 
-    def search_ingredients(self):
+    def add_ingredients_batch(self):
         """
-        Search for ingredients by name.
+        Batch add ingredients.
         """
-        self.logger.info("[/search] Searching for ingredients")
         try:
-            # Get query parameters
-            search_string = request.args.get('query', '').strip()
-            if not search_string:
-                self.logger.warning("[/search] Query parameter 'query' is missing")
-                return jsonify({"error": "Query parameter 'query' is required"}), 400
+            data = request.json
+            user_id = data.get("user_id")
+            ingredients = data.get("ingredients")
 
-            # Establish a database connection
-            connection = self.db.connect_read()
+            if not user_id or not ingredients:
+                self.logger.warning("[/add] Missing user_id or ingredients data")
+                return jsonify({"error": "Missing user_id or ingredients"}), 400
+
+            connection = self.db.connect_write()
             ingredients_model = IngredientsModel(connection)
 
-            # Get Ingredients
-            results = ingredients_model.find_ingredient_by_name(search_string)
-            if "message" in results:
-                self.logger.info(f"[/search] No ingredients found for query: {search_string}")
-                return jsonify(results), 404
-
-            self.logger.info(f"[/search] Found {len(results)} ingredients for query: {search_string}")
-            return jsonify(results), 200
+            response = ingredients_model.add_ingredients_batch(user_id, ingredients)
+            return jsonify(response), 200
 
         except Exception as e:
-            self.logger.error(f"[/search] Error occurred: {str(e)}", exc_info=True)
-            return jsonify({"error": "An error occurred while searching for ingredients", "details": str(e)}), 500
+            self.logger.error(f"[/add] Error adding ingredients: {str(e)}", exc_info=True)
+            return jsonify({"error": "An error occurred while adding ingredients", "details": str(e)}), 500
 
         finally:
-            self.logger.info("[/search] Closing database connections")
+            self.logger.info("[/add] Closing database connection")
             self.db.close_connections()
 
+    def remove_ingredients_batch(self):
+        """
+        Batch remove ingredients.
+        """
+        try:
+            data = request.json
+            user_id = data.get("user_id")
+            ingredients = data.get("ingredients")
+
+            if not user_id or not ingredients:
+                self.logger.warning("[/remove] Missing user_id or ingredients data")
+                return jsonify({"error": "Missing user_id or ingredients"}), 400
+
+            connection = self.db.connect_write()
+            ingredients_model = IngredientsModel(connection)
+
+            response = ingredients_model.remove_ingredients_batch(user_id, ingredients)
+            return jsonify(response), 200
+
+        except Exception as e:
+            self.logger.error(f"[/remove] Error removing ingredients: {str(e)}", exc_info=True)
+            return jsonify({"error": "An error occurred while removing ingredients", "details": str(e)}), 500
+
+        finally:
+            self.logger.info("[/remove] Closing database connection")
+            self.db.close_connections()
+
+    def update_ingredient_quantity(self):
+        """
+        Update ingredient quantity when an ingredient is used.
+        """
+        try:
+            data = request.json
+            user_id = data.get("user_id")
+            foodId = data.get("foodId")
+            quantity_used = data.get("quantity_used")
+
+            if not user_id or not foodId or quantity_used is None:
+                self.logger.warning("[/update] Missing required data")
+                return jsonify({"error": "Missing user_id, foodId, or quantity_used"}), 400
+
+            connection = self.db.connect_write()
+            ingredients_model = IngredientsModel(connection)
+
+            response = ingredients_model.update_ingredient_quantity(user_id, foodId, quantity_used)
+            return jsonify(response), 200
+
+        except Exception as e:
+            self.logger.error(f"[/update] Error updating ingredient quantity: {str(e)}", exc_info=True)
+            return jsonify({"error": "An error occurred while updating ingredient quantity", "details": str(e)}), 500
+
+        finally:
+            self.logger.info("[/update] Closing database connection")
+            self.db.close_connections()
 
 # Create controller and blueprint
 ingredients_controller = IngredientsController()
