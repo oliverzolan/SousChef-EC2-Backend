@@ -20,34 +20,46 @@ class IngredientsController:
         self.logger = logging.getLogger(__name__)
 
         # Routes
-        self.blueprint.add_url_rule('/all/<int:user_id>', view_func=self.get_all_ingredients, methods=['GET'])
+        self.blueprint.add_url_rule('/all', view_func=self.get_all_ingredients, methods=['GET'])
         self.blueprint.add_url_rule('/add', view_func=self.add_ingredients_batch, methods=['POST'])
         self.blueprint.add_url_rule('/remove', view_func=self.remove_ingredients_batch, methods=['POST'])
         self.blueprint.add_url_rule('/update', view_func=self.update_ingredient_quantity, methods=['POST'])
 
-    def get_all_ingredients(self, user_id):
+    def get_all_ingredients(self):
         """
         Fetch all ingredients for a specific user.
         """
-        self.logger.info(f"[/all/{user_id}] Fetching all ingredients")
+        self.logger.info(f"[/all] Fetching all ingredients")
         try:
             connection = self.db.connect_read()
             ingredients_model = IngredientsModel(connection)
 
-            ingredients = ingredients_model.get_all_ingredients(user_id)
+            # Get query parameters
+            id_token = request.headers.get('Authorization')
+            if not id_token:
+                self.logger.warning("Authorization token is missing in the request")
+                return jsonify({"error": "Authorization token is missing"}), 401
+
+            # Get UID
+            firebase_uid = get_cached_uid_redis(id_token)
+            if not firebase_uid:
+                self.logger.warning("Invalid or expired Firebase token")
+                return jsonify({"error": "Invalid or expired Firebase token"}), 401
+
+            ingredients = ingredients_model.get_all_ingredients(firebase_uid)
             if not ingredients:
-                self.logger.info(f"[/all/{user_id}] No ingredients found")
+                self.logger.info(f"[/all/] No ingredients found")
                 return jsonify({"message": "No ingredients found"}), 404
 
             self.logger.info(f"[/all/{user_id}] Retrieved {len(ingredients)} ingredients")
             return jsonify(ingredients), 200
 
         except Exception as e:
-            self.logger.error(f"[/all/{user_id}] Error occurred: {str(e)}", exc_info=True)
+            self.logger.error(f"[/all] Error occurred: {str(e)}", exc_info=True)
             return jsonify({"error": "An error occurred while fetching ingredients", "details": str(e)}), 500
 
         finally:
-            self.logger.info(f"[/all/{user_id}] Closing database connection")
+            self.logger.info(f"[/all] Closing database connection")
             self.db.close_connections()
 
     def add_ingredients_batch(self):
@@ -59,14 +71,26 @@ class IngredientsController:
             user_id = data.get("user_id")
             ingredients = data.get("ingredients")
 
-            if not user_id or not ingredients:
-                self.logger.warning("[/add] Missing user_id or ingredients data")
-                return jsonify({"error": "Missing user_id or ingredients"}), 400
+            if not not ingredients:
+                self.logger.warning("[/add] Missing Ingredients data")
+                return jsonify({"error": "Missing Ingredients"}), 400
+
+            # Get query parameters
+            id_token = request.headers.get('Authorization')
+            if not id_token:
+                self.logger.warning("Authorization token is missing in the request")
+                return jsonify({"error": "Authorization token is missing"}), 401
+
+            # Get UID
+            firebase_uid = get_cached_uid_redis(id_token)
+            if not firebase_uid:
+                self.logger.warning("Invalid or expired Firebase token")
+                return jsonify({"error": "Invalid or expired Firebase token"}), 401
 
             connection = self.db.connect_write()
             ingredients_model = IngredientsModel(connection)
 
-            response = ingredients_model.add_ingredients_batch(user_id, ingredients)
+            response = ingredients_model.add_ingredients_batch(firebase_uid, ingredients)
             return jsonify(response), 200
 
         except Exception as e:
@@ -86,14 +110,26 @@ class IngredientsController:
             user_id = data.get("user_id")
             ingredients = data.get("ingredients")
 
-            if not user_id or not ingredients:
+            if not ingredients:
                 self.logger.warning("[/remove] Missing user_id or ingredients data")
                 return jsonify({"error": "Missing user_id or ingredients"}), 400
+
+            # Get query parameters
+            id_token = request.headers.get('Authorization')
+            if not id_token:
+                self.logger.warning("Authorization token is missing in the request")
+                return jsonify({"error": "Authorization token is missing"}), 401
+
+            # Get UID
+            firebase_uid = get_cached_uid_redis(id_token)
+            if not firebase_uid:
+                self.logger.warning("Invalid or expired Firebase token")
+                return jsonify({"error": "Invalid or expired Firebase token"}), 401
 
             connection = self.db.connect_write()
             ingredients_model = IngredientsModel(connection)
 
-            response = ingredients_model.remove_ingredients_batch(user_id, ingredients)
+            response = ingredients_model.remove_ingredients_batch(firebase_uid, ingredients)
             return jsonify(response), 200
 
         except Exception as e:
@@ -114,14 +150,26 @@ class IngredientsController:
             foodId = data.get("foodId")
             quantity_used = data.get("quantity_used")
 
-            if not user_id or not foodId or quantity_used is None:
+            if not foodId or quantity_used is None:
                 self.logger.warning("[/update] Missing required data")
                 return jsonify({"error": "Missing user_id, foodId, or quantity_used"}), 400
+
+            # Get query parameters
+            id_token = request.headers.get('Authorization')
+            if not id_token:
+                self.logger.warning("Authorization token is missing in the request")
+                return jsonify({"error": "Authorization token is missing"}), 401
+
+            # Get UID
+            firebase_uid = get_cached_uid_redis(id_token)
+            if not firebase_uid:
+                self.logger.warning("Invalid or expired Firebase token")
+                return jsonify({"error": "Invalid or expired Firebase token"}), 401
 
             connection = self.db.connect_write()
             ingredients_model = IngredientsModel(connection)
 
-            response = ingredients_model.update_ingredient_quantity(user_id, foodId, quantity_used)
+            response = ingredients_model.update_ingredient_quantity(firebase_uid, foodId, quantity_used)
             return jsonify(response), 200
 
         except Exception as e:
