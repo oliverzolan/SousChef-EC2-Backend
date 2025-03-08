@@ -13,7 +13,7 @@ app = Flask(__name__)
 
 initialize_firebase()
 
-app.register_blueprint(pantry_blueprint, url_prefix='/pantry')
+# app.register_blueprint(pantry_blueprint, url_prefix='/pantry')
 app.register_blueprint(recipe_blueprint, url_prefix='/recipes')
 app.register_blueprint(user_blueprint, url_prefix='/users')
 app.register_blueprint(ingredients_blueprint, url_prefix='/ingredients')
