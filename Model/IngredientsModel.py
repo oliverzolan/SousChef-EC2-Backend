@@ -74,69 +74,69 @@ class IngredientsModel:
             logging.error(f"Error adding ingredients for user_id {user_id}: {str(e)}", exc_info=True)
             return {"error": "An error occurred while adding ingredients", "details": str(e)}
 
-    def remove_ingredients_batch(self, user_id, ingredients):
-        """
-        Batch remove ingredients.
-        """
-        try:
-            if not ingredients or not all('foodId' in ing and 'quantity' in ing for ing in ingredients):
-                logging.warning(f"Invalid input: {ingredients}")
-                return {"error": "Invalid ingredients data. Each ingredient must have 'foodId' and 'quantity'."}
+    # def remove_ingredients_batch(self, user_id, ingredients):
+    #     """
+    #     Batch remove ingredients.
+    #     """
+    #     try:
+    #         if not ingredients or not all('foodId' in ing and 'quantity' in ing for ing in ingredients):
+    #             logging.warning(f"Invalid input: {ingredients}")
+    #             return {"error": "Invalid ingredients data. Each ingredient must have 'foodId' and 'quantity'."}
 
-            with self.db.cursor() as cursor:
-                logging.info(f"Removing {len(ingredients)} ingredient(s) for user_id {user_id}")
+    #         with self.db.cursor() as cursor:
+    #             logging.info(f"Removing {len(ingredients)} ingredient(s) for user_id {user_id}")
 
-                for ing in ingredients:
-                    sql_decrement = """
-                    UPDATE Ingredients
-                    SET quantity = quantity - %s
-                    WHERE user_id = %s AND foodId = %s
-                    """
-                    cursor.execute(sql_decrement, (ing['quantity'], user_id, ing['foodId']))
+    #             for ing in ingredients:
+    #                 sql_decrement = """
+    #                 UPDATE Ingredients
+    #                 SET quantity = quantity - %s
+    #                 WHERE user_id = %s AND foodId = %s
+    #                 """
+    #                 cursor.execute(sql_decrement, (ing['quantity'], user_id, ing['foodId']))
 
-                    sql_delete = """
-                    DELETE FROM Ingredients
-                    WHERE user_id = %s AND foodId = %s AND quantity <= 0
-                    """
-                    cursor.execute(sql_delete, (user_id, ing['foodId']))
+    #                 sql_delete = """
+    #                 DELETE FROM Ingredients
+    #                 WHERE user_id = %s AND foodId = %s AND quantity <= 0
+    #                 """
+    #                 cursor.execute(sql_delete, (user_id, ing['foodId']))
 
-                self.db.commit()
+    #             self.db.commit()
 
-            logging.info(f"Successfully removed {len(ingredients)} ingredient(s) for user_id {user_id}")
-            return {"message": f"Successfully removed {len(ingredients)} ingredient(s)"}
+    #         logging.info(f"Successfully removed {len(ingredients)} ingredient(s) for user_id {user_id}")
+    #         return {"message": f"Successfully removed {len(ingredients)} ingredient(s)"}
 
-        except Exception as e:
-            self.db.rollback()
-            logging.error(f"Error removing ingredients for user_id {user_id}: {str(e)}", exc_info=True)
-            return {"error": "An error occurred while removing ingredients", "details": str(e)}
+    #     except Exception as e:
+    #         self.db.rollback()
+    #         logging.error(f"Error removing ingredients for user_id {user_id}: {str(e)}", exc_info=True)
+    #         return {"error": "An error occurred while removing ingredients", "details": str(e)}
 
-    def update_ingredient_quantity(self, user_id, foodId, quantity_used):
-        """
-        Update the quantity of an ingredient when it is used.
-        """
-        try:
-            with self.db.cursor() as cursor:
-                logging.info(f"Updating ingredient {foodId} for user_id {user_id} by reducing {quantity_used}")
+    # def update_ingredient_quantity(self, user_id, foodId, quantity_used):
+    #     """
+    #     Update the quantity of an ingredient when it is used.
+    #     """
+    #     try:
+    #         with self.db.cursor() as cursor:
+    #             logging.info(f"Updating ingredient {foodId} for user_id {user_id} by reducing {quantity_used}")
 
-                sql_update = """
-                UPDATE Ingredients
-                SET quantity = quantity - %s
-                WHERE user_id = %s AND foodId = %s
-                """
-                cursor.execute(sql_update, (quantity_used, user_id, foodId))
+    #             sql_update = """
+    #             UPDATE Ingredients
+    #             SET quantity = quantity - %s
+    #             WHERE user_id = %s AND foodId = %s
+    #             """
+    #             cursor.execute(sql_update, (quantity_used, user_id, foodId))
 
-                sql_delete = """
-                DELETE FROM Ingredients
-                WHERE user_id = %s AND foodId = %s AND quantity <= 0
-                """
-                cursor.execute(sql_delete, (user_id, foodId))
+    #             sql_delete = """
+    #             DELETE FROM Ingredients
+    #             WHERE user_id = %s AND foodId = %s AND quantity <= 0
+    #             """
+    #             cursor.execute(sql_delete, (user_id, foodId))
 
-                self.db.commit()
+    #             self.db.commit()
 
-            logging.info(f"Successfully updated ingredient {foodId} for user_id {user_id}")
-            return {"message": f"Successfully updated ingredient {foodId}"}
+    #         logging.info(f"Successfully updated ingredient {foodId} for user_id {user_id}")
+    #         return {"message": f"Successfully updated ingredient {foodId}"}
 
-        except Exception as e:
-            self.db.rollback()
-            logging.error(f"Error updating ingredient {foodId} for user_id {user_id}: {str(e)}", exc_info=True)
-            return {"error": "An error occurred while updating ingredient quantity", "details": str(e)}
+    #     except Exception as e:
+    #         self.db.rollback()
+    #         logging.error(f"Error updating ingredient {foodId} for user_id {user_id}: {str(e)}", exc_info=True)
+    #         return {"error": "An error occurred while updating ingredient quantity", "details": str(e)}
