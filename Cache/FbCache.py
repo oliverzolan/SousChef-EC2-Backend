@@ -1,7 +1,9 @@
 import time
 import logging
 from Config.Fb import verify_firebase_token
+from Config.Db import Database
 from Config.Redis import RedisClient  
+from Model.UserModel import UserModel
 
 redis_client = RedisClient().connect()
 
@@ -41,16 +43,27 @@ def get_cached_uid_redis(id_token):
             logging.error("[get_cached_uid_redis] Decoded token does not contain UID.")
             return None
 
-        # Check exp time and cache UID
+        #Database Connection
+        connection = db.connect_read()
+        user_model = UserModel(connection)
+
+        #Get User ID in AWS
+        user = user_model.get_user_by_firebase_uid(firebase_uid)
+        if not user:
+            logging.warning(f"[get_cached_uid_redis] User not found for Firebase UID: {firebase_uid}")
+            return None
+        user_id = user['id']
+
+        # Check exp time and user ID
         expires_in = decoded_token.get('exp', time.time() + 3600) - time.time()
         if expires_in <= 0:
             logging.error("[get_cached_uid_redis] Expiration time is invalid or in past.")
             return None
 
         # Place token in redis
-        redis_connection.setex(id_token, int(expires_in), firebase_uid)
+        redis_connection.setex(id_token, int(expires_in), user_id)
         logging.info(f"[get_cached_uid_redis] Cached UID for {int(expires_in)} seconds.")
-        return firebase_uid
+        return user_id
 
     except Exception as e:
         logging.error(f"[get_cached_uid_redis] Error: {str(e)}", exc_info=True)
