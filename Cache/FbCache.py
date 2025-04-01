@@ -42,9 +42,9 @@ def get_cached_uid_redis(id_token):
         if not firebase_uid:
             logging.error("[get_cached_uid_redis] Decoded token does not contain UID.")
             return None
-
+            
         #Database Connection
-        connection = db.connect_read()
+        connection = Database().connect_read()
         user_model = UserModel(connection)
 
         #Get User ID in AWS
