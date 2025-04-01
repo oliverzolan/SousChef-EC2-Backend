@@ -9,7 +9,6 @@ class UserModel:
         Check if user.
         """
         try:
-            # Set up query
             with self.db.cursor() as cursor:
                 cursor.execute("SELECT id FROM Users WHERE firebase_uid = %s", (firebase_uid,))
                 return cursor.fetchone()
@@ -23,7 +22,6 @@ class UserModel:
         Create user.
         """
         try:
-            # Set up query
             with self.db.cursor() as cursor:
                 cursor.execute(
                     "INSERT INTO Users (firebase_uid, email) VALUES (%s, %s)",
@@ -42,7 +40,6 @@ class UserModel:
         Delete user.
         """
         try:
-            # Set up query
             with self.db.cursor() as cursor:
                 cursor.execute("SELECT id FROM Users WHERE firebase_uid = %s", (firebase_uid,))
                 user = cursor.fetchone()
