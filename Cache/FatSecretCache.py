@@ -5,7 +5,6 @@ from Auth.FatSecretAuth import FatSecretAuth
 
 redis_client = RedisClient().connect()
 
-# Set up logging
 logging.basicConfig(
     filename='/var/log/flask_app.log',
     level=logging.INFO,
@@ -21,9 +20,10 @@ def get_cached_fatsecret_token():
         redis_connection = RedisClient().connect()
         
         cached_token = redis_connection.get("fatsecret_token")
+
         if cached_token:
             logging.info("[get_cached_fatsecret_token] Cache hit for FatSecret token.")
-            return cached_token.decode("utf-8")
+            return cached_token
 
         logging.info("[get_cached_fatsecret_token] Cache miss, requesting new token.")
         

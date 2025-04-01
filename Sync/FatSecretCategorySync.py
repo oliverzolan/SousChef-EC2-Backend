@@ -1,7 +1,7 @@
 import logging
 from Config.Db import Database
-from Api.FatSecretComponent import FatSecretComponent
-from Model.CategoriesModel import CategoriesModel
+from Api.FatSecret import FatSecretComponent
+from Model.CategoryModel import CategoryModel
 
 logging.basicConfig(
     filename='/var/log/fatsecret_sync.log',
@@ -9,7 +9,7 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 
-def sync_fatsecret_data():
+def sync_fatsecret_category():
     """
     Syncs FatSecret categories and subcategories.
     """
@@ -17,7 +17,7 @@ def sync_fatsecret_data():
 
     try:
         db_connection = Database().connect_write()
-        categories_model = CategoriesModel(db_connection)
+        category_model = CategoryModel(db_connection)
         fatsecret = FatSecretComponent()
 
         categories = fatsecret.get_food_categories()
@@ -30,12 +30,12 @@ def sync_fatsecret_data():
             category_name = category["name"]
             category_description = "" 
 
-            categories_model.insert_or_update_category(category_id, category_name, category_description)
+            category_model.insert_or_update_category(category_id, category_name, category_description)
 
             subcategories = fatsecret.get_food_sub_categories(category_id)
             if subcategories:
                 for subcategory in subcategories:
-                    categories_model.insert_or_update_subcategory(subcategory, category_id)
+                    category_model.insert_or_update_subcategory(subcategory, category_id)
 
         logging.info("[sync_fatsecret_data] Sync successfully.")
 
@@ -48,4 +48,4 @@ def sync_fatsecret_data():
             logging.info("[sync_fatsecret_data] Database connection closed.")
 
 if __name__ == "__main__":
-    sync_fatsecret_data()
+    sync_fatsecret_category()

@@ -1,5 +1,5 @@
 import requests
-from FatSecretTokenCache import get_cached_fatsecret_token
+from Cache.FatSecretCache import get_cached_fatsecret_token
 
 class FatSecretComponent:
     """Handles FatSecret API interactions, including authentication and food recognition."""
