@@ -1,8 +1,11 @@
 import logging
+from Model.CategoryModel import CategoryModel
+from Api.FatSecret import FatSecretComponent
 
 class IngredientsModel:
     def __init__(self, db_connection):
         self.db = db_connection
+        self.food_api = FatSecretComponent()
 
     def get_all_ingredients(self, user_id):
         """
@@ -36,9 +39,9 @@ class IngredientsModel:
         Batch add ingredients.
         """
         try:
-            if not ingredients or not all('foodId' in ing and 'quantity' in ing for ing in ingredients):
+            if not ingredients or not all('foodId' in ing and 'quantity' in ing and 'food' in ing and 'measure' in ing and 'weight' in ing for ing in ingredients):
                 logging.warning(f"Invalid input: {ingredients}")
-                return {"error": "Invalid ingredients data. Each ingredient must have 'foodId' and 'quantity'."}
+                return {"error": "Invalid ingredients data. Each ingredient must have 'foodId' and 'quantity' and 'measure' and 'weight'."}
 
             with self.db.cursor() as cursor:
                 logging.info(f"Adding {len(ingredients)} ingredient(s) for user_id {user_id}")
@@ -49,8 +52,15 @@ class IngredientsModel:
                 ON DUPLICATE KEY UPDATE quantity = quantity + VALUES(quantity)
                 """
 
-                data = [
-                    (
+                data = []
+                for ing in ingredients:
+                    subcategories = self.food_api.search_foods(ing.get('food', ''))
+                    first_subcategory = subcategories[0] if subcategories else None
+                    category = CategoryModel(self.db).get_category_by_subcategory(first_subcategory) if first_subcategory else None
+
+                    print(category)
+    
+                    data.append((
                         user_id,
                         ing['foodId'],
                         ing.get('text', ''),
@@ -58,10 +68,8 @@ class IngredientsModel:
                         ing.get('measure', ''),
                         ing.get('food', ''),
                         ing.get('weight', 0),
-                        ing.get('foodCategory', '')
-                    )
-                    for ing in ingredients
-                ]
+                        category if category else '' 
+                    ))
 
                 cursor.executemany(sql, data)
                 self.db.commit()

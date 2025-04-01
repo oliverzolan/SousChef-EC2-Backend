@@ -24,8 +24,8 @@ class IngredientsController:
         # Routes
         self.blueprint.add_url_rule('/all', view_func=self.get_all_ingredients, methods=['GET'])
         self.blueprint.add_url_rule('/add', view_func=self.add_ingredients_batch, methods=['POST'])
-        self.blueprint.add_url_rule('/remove', view_func=self.remove_ingredients_batch, methods=['POST'])
-        self.blueprint.add_url_rule('/update', view_func=self.update_ingredient_quantity, methods=['POST'])
+        # self.blueprint.add_url_rule('/remove', view_func=self.remove_ingredients_batch, methods=['POST'])
+        # self.blueprint.add_url_rule('/update', view_func=self.update_ingredient_quantity, methods=['POST'])
 
     def get_all_ingredients(self):
         """
