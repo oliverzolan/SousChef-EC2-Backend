@@ -10,7 +10,7 @@ class RecipeController:
     Controller with routes, function calling, error handling, and logging.
     """
     def __init__(self):
-        self.blueprint = Blueprint('recipe', __name__)
+        self.blueprint = Blueprint('recipe_blueprint', __name__)
         self.db = Database()  # Added database connection
 
         # Initialize logger
@@ -127,3 +127,7 @@ class RecipeController:
             self.db.rollback()
             self.logger.error(f"[/remove] Error removing recipe: {str(e)}", exc_info=True)
             return jsonify({"error": "An error occurred while removing recipe", "details": str(e)}), 500
+
+# Create controller and blueprint
+recipes_controller = RecipeController()
+recipes_blueprint = recipes_controller.blueprint
