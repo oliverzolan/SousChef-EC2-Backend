@@ -68,7 +68,7 @@ class RecipeController:
             recipe = data.get("recipe")
 
             if not recipe:
-                self.logger.warning("[/add] Missing Recipe data")
+                self.logger.warning("[/add] Missing Recipe parameters")
                 return jsonify({"error": "Missing Recipe"}), 400
 
             # Get Authorization token
