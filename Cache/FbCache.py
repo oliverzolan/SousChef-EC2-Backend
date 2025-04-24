@@ -5,8 +5,6 @@ from Config.Db import Database
 from Config.Redis import RedisClient  
 from Model.UserModel import UserModel
 
-redis_client = RedisClient().connect()
-
 # Set up logging
 logging.basicConfig(
     filename='/var/log/flask_app.log',
@@ -30,7 +28,7 @@ def get_cached_uid_redis(id_token):
             return cached_uid
 
         logging.info("[get_cached_uid_redis] Cache miss, verifying token with Firebase.")
-        
+
         # Verify token in Firebase
         decoded_token = verify_firebase_token(id_token)
         if not decoded_token:
