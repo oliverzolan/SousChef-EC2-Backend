@@ -26,13 +26,14 @@ class UserController:
 
     def create_user(self):
         """
-        Create user in Database.
+        Create user in the database and optionally register a device token.
         """
         try:
             self.logger.info("[/create] Processing user creation request")
 
             id_token = request.headers.get('Authorization')
             email = request.headers.get('Email')
+            device_token = request.headers.get('Device-Token')
 
             if not id_token or not email:
                 if not id_token:
@@ -41,26 +42,29 @@ class UserController:
                     self.logger.warning("[/create] Email is missing in the request")
                 return jsonify({"error": "Authorization token or email is missing"}), 400
 
-            # Get UID
             firebase_uid = get_cached_uid_redis(id_token)
             if not firebase_uid:
                 self.logger.warning("[/create] Invalid or expired Firebase token")
                 return jsonify({"error": "Invalid or expired Firebase token"}), 401
 
-            # Establish database connection
             self.logger.info("[/create] Establishing write connection to the database")
             connection = self.db.connect_write()
             user_model = UserModel(connection)
 
-            # Check if user exist
             existing_user = user_model.get_user_by_firebase_uid(firebase_uid)
             if existing_user:
                 self.logger.info(f"[/create] User already exists: {existing_user['id']}")
+                if device_token:
+                    user_model.register_device_token(firebase_uid, device_token)
+                    self.logger.info(f"[/create] Device token registered for existing user.")
                 return jsonify({"message": "User already exists", "user_id": existing_user['id']}), 200
 
-            # Add user
             user_id = user_model.create_user(firebase_uid, email)
             self.logger.info(f"[/create] New user created with ID: {user_id}")
+
+            if device_token:
+                user_model.register_device_token(firebase_uid, device_token)
+                self.logger.info("[/create] Device token registered for new user.")
 
             return jsonify({"message": "User created successfully", "user_id": user_id}), 201
 
@@ -76,4 +80,3 @@ class UserController:
 # Create controller and blueprint
 user_controller = UserController()
 user_blueprint = user_controller.blueprint
-

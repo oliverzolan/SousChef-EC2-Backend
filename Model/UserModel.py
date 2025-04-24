@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 
 class UserModel:
     def __init__(self, db_connection):
@@ -55,3 +56,34 @@ class UserModel:
             logging.error(f"Error deleting user with Firebase UID {firebase_uid}: {str(e)}", exc_info=True)
             return {"error": "An error occurred while deleting the user", "details": str(e)}
 
+    def register_device_token(self, firebase_uid, device_token):
+        """
+        Register or update a device token for a user.
+        """
+        try:
+            with self.db.cursor() as cursor:
+                cursor.execute("""
+                    INSERT INTO UserDevices (firebase_uid, device_token, last_active)
+                    VALUES (%s, %s, NOW())
+                    ON DUPLICATE KEY UPDATE last_active = NOW()
+                """, (firebase_uid, device_token))
+                self.db.commit()
+                return {"message": "Device token registered or updated successfully"}
+
+        except Exception as e:
+            self.db.rollback()
+            logging.error(f"Error registering device token for Firebase UID {firebase_uid}: {str(e)}", exc_info=True)
+            return {"error": "An error occurred while registering the device", "details": str(e)}
+
+    def get_device_tokens(self, firebase_uid):
+        """
+        Retrieve all device tokens for a user.
+        """
+        try:
+            with self.db.cursor() as cursor:
+                cursor.execute("SELECT device_token FROM UserDevices WHERE firebase_uid = %s", (firebase_uid,))
+                return [row['device_token'] for row in cursor.fetchall()]
+
+        except Exception as e:
+            logging.error(f"Error fetching device tokens for Firebase UID {firebase_uid}: {str(e)}", exc_info=True)
+            return {"error": "An error occurred while fetching device tokens", "details": str(e)}
