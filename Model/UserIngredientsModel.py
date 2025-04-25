@@ -67,7 +67,7 @@ class UserIngredientsModel:
                 delete_data = []
 
                 for ing in ingredients:
-                    if ing['quantity'] == 0:
+                    if int(ing['quantity']) == 0:
                         delete_data.append((user_id, ing['edamam_food_id']))
                     else:
                         insert_data.append((
@@ -141,4 +141,33 @@ class UserIngredientsModel:
 
         except Exception as e:
             logging.error(f"Error fetching all expiring ingredients: {str(e)}", exc_info=True)
+            return {"error": "An error occurred while checking for expiring ingredients", "details": str(e)}
+
+    def get_ingredients_expiring_soon_for_user(self, user_id):
+        """
+        Gets ingredients that are expiring within 24 hours for a specific user.
+        """
+        try:
+            with self.db.cursor(dictionary=True) as cursor:
+                cursor.execute(
+                    """
+                    SELECT ui.user_id, ui.edamam_food_id, ui.quantity, ui.date_added,
+                        ii.Name, ii.Expiration_Duration,
+                        TIMESTAMPDIFF(DAY, ui.date_added, NOW()) AS days_elapsed,
+                        (ii.Expiration_Duration - TIMESTAMPDIFF(DAY, ui.date_added, NOW())) AS days_left
+                    FROM UserIngredients ui
+                    JOIN InternalIngredients ii
+                    ON ui.edamam_food_id = ii.Edamam_Food_ID
+                    WHERE (ii.Expiration_Duration - TIMESTAMPDIFF(DAY, ui.date_added, NOW())) BETWEEN 0 AND 1
+                    AND ui.user_id = %s
+                    """, 
+                    (user_id,)
+                )
+                rows = cursor.fetchall()
+
+            logging.info(f"Fetched {len(rows)} expiring ingredients for user {user_id}")
+            return rows
+
+        except Exception as e:
+            logging.error(f"Error fetching expiring ingredients for user {user_id}: {str(e)}", exc_info=True)
             return {"error": "An error occurred while checking for expiring ingredients", "details": str(e)}

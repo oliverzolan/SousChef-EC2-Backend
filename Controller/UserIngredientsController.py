@@ -23,6 +23,7 @@ class UserIngredientsController:
         # Routes
         self.blueprint.add_url_rule('/all', view_func=self.get_all_user_ingredients, methods=['GET'])
         self.blueprint.add_url_rule('/update', view_func=self.update_user_ingredients_batch, methods=['POST'])
+        self.blueprint.add_url_rule('/get_expring', view_func=self.get_expring_user_ingredients, methods=['GET'])
 
     def get_all_user_ingredients(self):
         """
@@ -101,6 +102,45 @@ class UserIngredientsController:
             if connection:
                 connection.close()
             self.logger.info("[/update] Database connection closed")
+
+    def get_expring_user_ingredients(self):
+        """
+        Fetch all expiring ingredients for a specific user within 24 hours.
+        """
+        self.logger.info("[/get_expring] Fetching all ingredients")
+        connection = None
+
+        try:
+            id_token = request.headers.get('Authorization')
+            if not id_token:
+                self.logger.warning("[/get_expring] Missing Authorization token")
+                return jsonify({"error": "Authorization token is missing"}), 401
+
+            user_id = get_cached_uid_redis(id_token)
+            if not user_id:
+                self.logger.warning("[/get_expring] Invalid or expired token")
+                return jsonify({"error": "User ID not found from token"}), 401
+
+            connection = self.db.connect_read()
+            ingredients_model = UserIngredientsModel(connection)
+
+            ingredients = ingredients_model.get_ingredients_expiring_soon_for_user(user_id)
+            if not ingredients:
+                self.logger.info(f"[/get_expring/{user_id}] No ingredients found")
+                return jsonify({"message": "No ingredients found"}), 404
+
+            self.logger.info(f"[/get_expring/{user_id}] Retrieved {len(ingredients)} ingredients")
+            return jsonify(ingredients), 200
+
+        except Exception as e:
+            self.logger.error(f"[/get_expring] Error: {str(e)}", exc_info=True)
+            return jsonify({"error": "An error occurred", "details": str(e)}), 500
+
+        finally:
+            if connection:
+                connection.close()
+            self.logger.info("[/get_expring] Database connection closed")
+
 
 # Register controller and blueprint
 user_ingredients_controller = UserIngredientsController()

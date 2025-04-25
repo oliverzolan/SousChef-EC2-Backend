@@ -36,9 +36,6 @@ class ExpiringIngredientNotifierService:
         self.apns_topic = 'com.your.bundle.id'  
 
     def get_users_with_expiring_ingredients(self):
-        """
-        Collects a dictionary of user_id -> list of expiring ingredients (within 24h).
-        """
         try:
             model = UserIngredientsModel(self.db)
             grouped_results = model.get_all_ingredients_expiring_soon_grouped_by_user()
