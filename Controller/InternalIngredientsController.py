@@ -21,6 +21,8 @@ class InternalIngredientsController:
 
         # Routes
         self.blueprint.add_url_rule('/search', view_func=self.get_ingredients_with_search, methods=['GET'])
+        self.blueprint.add_url_rule('/get_nutirtion_by_id', view_func=self.get_nutrition_by_id, methods=['GET'])
+
 
     def get_ingredients_with_search(self):
         """
@@ -60,6 +62,44 @@ class InternalIngredientsController:
             if connection:
                 connection.close()
             self.logger.info("[/search] Database connection closed")
+
+    def get_nutrition_by_id(self):
+        """
+        Fetch  nutrition by Edamam Food ID.
+        """
+        self.logger.info("[/get_nutrition_by_id] Fetching nutrition info")
+
+        connection = None
+        try:
+            food_id = request.args.get("edamam_food_id")
+            if not food_id:
+                self.logger.warning("[/get_nutrition_by_id] Missing 'edamam_food_id' parameter")
+                return jsonify({"error": "Missing 'edamam_food_id' parameter"}), 400
+
+            connection = self.db.connect_read()
+            internal_ingredients_model = InternalIngredientsModel(connection)
+
+            nutrition = internal_ingredients_model.get_nutrition_by_edamam_id(food_id)
+
+            if not nutrition or isinstance(nutrition, dict) and "message" in nutrition:
+                self.logger.info(f"[/get_nutrition_by_id] No data found for food ID: {food_id}")
+                return jsonify({"message": "No nutrition info found"}), 404
+
+            self.logger.info(f"[/get_nutrition_by_id] Nutrition info found for {food_id}")
+            return jsonify(nutrition), 200
+
+        except Exception as e:
+            self.logger.error(f"[/get_nutrition_by_id] Error: {str(e)}", exc_info=True)
+            return jsonify({
+                "error": "An error occurred while fetching nutrition info",
+                "details": str(e)
+            }), 500
+
+        finally:
+            if connection:
+                connection.close()
+            self.logger.info("[/get_nutrition_by_id] Database connection closed")
+
 
 # Blueprint to register
 internal_ingredients_controller = InternalIngredientsController()

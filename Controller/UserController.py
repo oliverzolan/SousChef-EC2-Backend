@@ -33,7 +33,6 @@ class UserController:
 
             id_token = request.headers.get('Authorization')
             email = request.headers.get('Email')
-            device_token = request.headers.get('Device-Token')
 
             if not id_token or not email:
                 if not id_token:
@@ -52,19 +51,9 @@ class UserController:
             user_model = UserModel(connection)
 
             existing_user = user_model.get_user_by_firebase_uid(firebase_uid)
-            if existing_user:
-                self.logger.info(f"[/create] User already exists: {existing_user['id']}")
-                if device_token:
-                    user_model.register_device_token(firebase_uid, device_token)
-                    self.logger.info(f"[/create] Device token registered for existing user.")
-                return jsonify({"message": "User already exists", "user_id": existing_user['id']}), 200
 
             user_id = user_model.create_user(firebase_uid, email)
             self.logger.info(f"[/create] New user created with ID: {user_id}")
-
-            if device_token:
-                user_model.register_device_token(firebase_uid, device_token)
-                self.logger.info("[/create] Device token registered for new user.")
 
             return jsonify({"message": "User created successfully", "user_id": user_id}), 201
 

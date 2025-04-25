@@ -38,3 +38,35 @@ class InternalIngredientsModel:
         except Exception as e:
             logging.error(f"Error searching ingredients with query '{q}': {str(e)}", exc_info=True)
             return {"error": "An error occurred while searching for ingredients", "details": str(e)}
+
+    def get_nutrition_by_edamam_id(self, edamam_id):
+        """
+        Fetch nutrition details for an ingredient by ID.
+        """
+        try:
+            with self.db.cursor() as cursor:
+                cursor.execute(
+                    """
+                    SELECT 
+                        Edamam_Food_ID, Name, Category, Quantity_Type, Quantity,
+                        Fat, Cholesterol, Sodium, Potassium,
+                        Carbohydrate, Protein, Calorie
+                    FROM InternalIngredients
+                    WHERE Edamam_Food_ID = %s
+                    """,
+                    (edamam_id,)
+                )
+                result = cursor.fetchone()
+
+            if not result:
+                logging.info(f"No nutrition info found for Edamam_Food_ID: {edamam_id}")
+                return {"message": f"No nutrition info found for food ID: {edamam_id}"}
+
+            logging.info(f"Nutrition info found for Edamam_Food_ID: {edamam_id}")
+            return result
+
+        except Exception as e:
+            logging.error(f"Error fetching nutrition info for Edamam_Food_ID '{edamam_id}': {str(e)}", exc_info=True)
+            return {"error": "An error occurred while fetching nutrition info", "details": str(e)}
+
+

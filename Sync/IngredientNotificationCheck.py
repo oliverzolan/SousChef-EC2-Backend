@@ -38,7 +38,7 @@ class ExpiringIngredientNotifierService:
     def get_users_with_expiring_ingredients(self):
         try:
             model = UserIngredientsModel(self.db)
-            grouped_results = model.get_all_ingredients_expiring_soon_grouped_by_user()
+            grouped_results = model.get_all_ingredients_expiring_grouped()
 
             for user_id, items in grouped_results.items():
                 logging.info(f"[Notifier] User {user_id} has {len(items)} expiring ingredients")

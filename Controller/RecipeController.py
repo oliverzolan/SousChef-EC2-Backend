@@ -11,7 +11,7 @@ class RecipeController:
     """
     def __init__(self):
         self.blueprint = Blueprint('recipe_blueprint', __name__)
-        self.db = Database()  # Added database connection
+        self.db = Database() 
 
         # Initialize logger
         logging.basicConfig(

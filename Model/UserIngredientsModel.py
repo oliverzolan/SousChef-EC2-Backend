@@ -108,12 +108,12 @@ class UserIngredientsModel:
             logging.error(f"Error adding ingredients for user_id {user_id}: {str(e)}", exc_info=True)
             return {"error": "An error occurred while adding ingredients", "details": str(e)}
 
-    def get_all_ingredients_expiring_soon_grouped_by_user(self):
+    def get_all_ingredients_expiring_grouped(self):
         """
         Gets ingredients that are expiring within 24 hours from all users
         """
         try:
-            with self.db.cursor(dictionary=True) as cursor:
+            with self.db.cursor() as cursor:
                 cursor.execute(
                     """
                     SELECT ui.user_id, ui.edamam_food_id, ui.quantity, ui.date_added,
@@ -143,12 +143,12 @@ class UserIngredientsModel:
             logging.error(f"Error fetching all expiring ingredients: {str(e)}", exc_info=True)
             return {"error": "An error occurred while checking for expiring ingredients", "details": str(e)}
 
-    def get_ingredients_expiring_soon_for_user(self, user_id):
+    def get_ingredients_expiring(self, user_id):
         """
         Gets ingredients that are expiring within 24 hours for a specific user.
         """
         try:
-            with self.db.cursor(dictionary=True) as cursor:
+            with self.db.cursor() as cursor:
                 cursor.execute(
                     """
                     SELECT ui.user_id, ui.edamam_food_id, ui.quantity, ui.date_added,
@@ -171,3 +171,57 @@ class UserIngredientsModel:
         except Exception as e:
             logging.error(f"Error fetching expiring ingredients for user {user_id}: {str(e)}", exc_info=True)
             return {"error": "An error occurred while checking for expiring ingredients", "details": str(e)}
+
+    def get_ingredients_expiring(self, user_id):
+        """
+        Gets ingredients that are expiring within 24 hours for a specific user.
+        """
+        try:
+            with self.db.cursor() as cursor:
+                cursor.execute(
+                    """
+                    SELECT ui.user_id, ui.edamam_food_id, ui.quantity, ui.date_added,
+                        ii.Name, ii.Expiration_Duration,
+                        TIMESTAMPDIFF(DAY, ui.date_added, NOW()) AS days_elapsed,
+                        (ii.Expiration_Duration - TIMESTAMPDIFF(DAY, ui.date_added, NOW())) AS days_left
+                    FROM UserIngredients ui
+                    JOIN InternalIngredients ii
+                    ON ui.edamam_food_id = ii.Edamam_Food_ID
+                    WHERE (ii.Expiration_Duration - TIMESTAMPDIFF(DAY, ui.date_added, NOW())) BETWEEN 0 AND 1
+                    AND ui.user_id = %s
+                    """, 
+                    (user_id,)
+                )
+                rows = cursor.fetchall()
+
+            logging.info(f"Fetched {len(rows)} expiring ingredients for user {user_id}")
+            return rows
+
+        except Exception as e:
+            logging.error(f"Error fetching expiring ingredients for user {user_id}: {str(e)}", exc_info=True)
+            return {"error": "An error occurred while checking for expiring ingredients", "details": str(e)}
+
+    def delete_user_ingredients_batch(self, user_id, edamam_food_id):
+        """
+        Deletes a batch of ingredients for a given user.
+        """
+        try:
+            if isinstance(edamam_food_id, str):
+                edamam_food_id = [edamam_food_id]
+
+            with self.db.cursor() as cursor:
+                format_strings = ','.join(['%s'] * len(edamam_food_id))
+                query = f"""
+                    DELETE FROM UserIngredients
+                    WHERE user_id = %s AND edamam_food_id IN ({format_strings})
+                """
+                cursor.execute(query, [user_id] + edamam_food_id)
+
+            self.db.commit()
+            return {"message": f"Deleted {cursor.rowcount} ingredients."}
+
+        except Exception as e:
+            self.db.rollback()
+            raise Exception(f"Failed to delete ingredients: {str(e)}")
+
+
